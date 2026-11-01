@@ -1,0 +1,2172 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" id="app-html">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#062c1e">
+    <title>Mahjong Pro: Ultimate Edition</title>
+
+    <!-- Official Poki SDK -->
+    <script src="https://game-cdn.poki.com/scripts/v2/poki-sdk.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            user-select: none;
+        }
+
+        html, body {
+            margin: 0; padding: 0;
+            width: 100%; height: 100vh; height: 100dvh;
+            overflow: hidden;
+            overscroll-behavior: none;
+            touch-action: none;
+            font-family: 'Segoe UI', system-ui, -apple-system, Tahoma, sans-serif;
+            color: white;
+            background: #03170f;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            direction: ltr;
+        }
+
+        /* --- Mobile & Poki Responsive App Shell --- */
+        #app-shell {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 860px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background: 
+                radial-gradient(circle at 50% 35%, rgba(16, 185, 129, 0.22), transparent 65%),
+                radial-gradient(circle at center, #0d522c 0%, #073522 65%, #042216 100%);
+            box-shadow: 0 0 60px rgba(0,0,0,0.95);
+            overflow: hidden;
+        }
+
+        @media (min-width: 860px) {
+            #app-shell {
+                border-left: 2px solid rgba(52, 211, 153, 0.2);
+                border-right: 2px solid rgba(52, 211, 153, 0.2);
+            }
+        }
+
+        #app-shell::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px);
+            background-size: 22px 22px;
+            pointer-events: none;
+        }
+
+        /* --- Top HUD --- */
+        header {
+            flex: 0 0 auto;
+            width: 100%;
+            padding: calc(env(safe-area-inset-top, 4px) + 6px) 16px 4px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(180deg, rgba(2, 28, 18, 0.9) 0%, rgba(2, 28, 18, 0) 100%);
+            z-index: 100;
+        }
+
+        .hud-pill {
+            background: rgba(4, 47, 46, 0.85);
+            border: 1.5px solid rgba(52, 211, 153, 0.45);
+            border-radius: 16px;
+            padding: 5px 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 96px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5), 0 4px 8px rgba(0,0,0,0.35);
+            backdrop-filter: blur(6px);
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #86efac;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+
+        .stat-value {
+            font-size: 19px;
+            color: #ffffff;
+            font-weight: 900;
+            line-height: 1.1;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #022c22;
+            border-radius: 4px;
+            margin-top: 4px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.8);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #facc15, #f59e0b);
+            border-radius: 4px;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .header-center {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .score-pill {
+            background: linear-gradient(180deg, #064e3b, #022c22);
+            border: 2px solid #fbbf24;
+            border-radius: 22px;
+            padding: 3px 16px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.25);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .score-value {
+            font-size: 24px;
+            color: #fef08a;
+            font-weight: 900;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.7);
+            transition: transform 0.15s ease;
+        }
+        .score-bump { transform: scale(1.25); color: #fde047; }
+
+        .best-score-sub {
+            font-size: 11px;
+            color: #a7f3d0;
+            margin-top: 2px;
+            font-weight: bold;
+            opacity: 0.9;
+        }
+
+        .combo-badge {
+            font-size: 11px;
+            color: #fff;
+            background: linear-gradient(90deg, #f97316, #dc2626);
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-weight: 900;
+            margin-top: 2px;
+            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.6);
+            opacity: 0;
+            transform: scale(0.7);
+            transition: opacity 0.2s, transform 0.2s;
+            pointer-events: none;
+        }
+        .combo-badge.active { opacity: 1; transform: scale(1); }
+        .val-gold { color: #fbbf24; font-size: 28px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+
+        /* --- Game Board Area (Fixed for PC & Mobile so it never pushes controls off-screen) --- */
+        #board-wrapper {
+            flex: 1 1 0%;
+            min-height: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #game-board {
+            position: relative;
+            width: 530px;
+            height: 500px;
+            transform-origin: center center;
+            transition: transform 0.25s ease;
+            flex-shrink: 0;
+        }
+
+        /* --- 3D Mahjong Tile Styling (Enlarged) --- */
+        .tile {
+            position: absolute;
+            background-color: #fcfaf2;
+            border-radius: 9px;
+            cursor: pointer;
+            transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s, box-shadow 0.16s, opacity 0.25s;
+            border: 1px solid #cbd5e1;
+            box-shadow:
+                inset 1.5px 1.5px 0px #ffffff,
+                inset -1px -1px 2px rgba(148, 163, 184, 0.5),
+                -4px 5px 0px #1e3a8a,
+                -6px 9px 12px rgba(0,0,0,0.65);
+            background-size: 94% 94%;
+            background-position: center;
+            background-repeat: no-repeat;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        @keyframes deal-drop {
+            0% { opacity: 0; transform: translateY(-60px) scale(0.75); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .tile.dealing {
+            animation: deal-drop 0.32s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+        }
+
+        .tile.selected {
+            transform: translateY(-10px) translateX(3px) scale(1.06);
+            box-shadow:
+                inset 0 0 8px rgba(251, 191, 36, 0.4),
+                -4px 6px 0px #b45309,
+                0 0 20px 6px rgba(251, 191, 36, 0.9);
+            border-color: #fbbf24;
+            z-index: 999 !important;
+            background-color: #fffbeb;
+        }
+
+        .tile.blocked {
+            cursor: not-allowed;
+            filter: brightness(0.9) contrast(0.95);
+        }
+
+        @keyframes tile-shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-5px) rotate(-2deg); }
+            40% { transform: translateX(5px) rotate(2deg); }
+            60% { transform: translateX(-4px) rotate(-1deg); }
+            80% { transform: translateX(4px) rotate(1deg); }
+        }
+        .tile.shake {
+            animation: tile-shake 0.28s ease-in-out !important;
+            filter: brightness(0.55) sepia(0.4) hue-rotate(-30deg) !important;
+        }
+
+        /* --- Mystery (Face-Down) Tile --- */
+        .tile.facedown {
+            background-image: none !important;
+            background: linear-gradient(135deg, #0ea5e9, #1d4ed8) !important;
+            border: 1px solid #93c5fd !important;
+            box-shadow: -4px 5px 0px #0f172a, -6px 8px 10px rgba(0,0,0,0.8) !important;
+        }
+        .tile.facedown::after {
+            content: "❖";
+            color: rgba(255, 255, 255, 0.45);
+            font-size: 24px;
+            pointer-events: none;
+        }
+
+        @keyframes pulse-hint-extreme {
+            0% { transform: scale(1); box-shadow: -4px 5px 0px #1e3a8a; }
+            50% { transform: scale(1.15) translateY(-12px); box-shadow: 0 15px 30px 10px rgba(251, 191, 36, 0.95), 0 0 15px #f59e0b inset; background-color: #fffbeb; border-color: #fbbf24; }
+            100% { transform: scale(1); box-shadow: -4px 5px 0px #1e3a8a; }
+        }
+        .tile.hinted { animation: pulse-hint-extreme 1.2s infinite ease-in-out !important; z-index: 1000 !important; }
+
+        /* --- Floating Score Popup --- */
+        .floating-score {
+            position: absolute;
+            pointer-events: none;
+            z-index: 1600;
+            font-weight: 900;
+            font-size: 21px;
+            color: #fef08a;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.9), 0 0 10px #f59e0b;
+            white-space: nowrap;
+            transform: translate(-50%, -50%);
+            animation: float-up 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes float-up {
+            0% { opacity: 0; transform: translate(-50%, -20%) scale(0.6); }
+            25% { opacity: 1; transform: translate(-50%, -60%) scale(1.15); }
+            100% { opacity: 0; transform: translate(-50%, -140%) scale(0.95); }
+        }
+
+        /* --- Bottom App Dock (Always Visible on PC & Mobile) --- */
+        .controls {
+            flex: 0 0 auto;
+            width: calc(100% - 28px);
+            max-width: 420px;
+            margin: 2px auto calc(env(safe-area-inset-bottom, 6px) + 8px) auto;
+            padding: 7px 18px;
+            background: rgba(4, 47, 46, 0.88);
+            border: 1.5px solid rgba(52, 211, 153, 0.45);
+            border-radius: 28px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 105;
+            box-shadow: 0 8px 22px rgba(0,0,0,0.7), inset 0 1px 1px rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .action-btn-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .action-btn.circular {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 50% 20%, #a3e635, #4d7c0f);
+            border: 3px solid #facc15;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            padding: 0;
+            box-shadow: inset 0 -4px 0 rgba(0,0,0,0.35), inset 0 3px 0 rgba(255,255,255,0.45), 0 5px 10px rgba(0,0,0,0.5);
+            transition: transform 0.1s, box-shadow 0.1s, filter 0.2s;
+        }
+        .action-btn.circular:active {
+            transform: translateY(4px) scale(0.95);
+            box-shadow: inset 0 -2px 0 rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        /* Badge for the 2 Help Buttons Below */
+        .btn-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            min-width: 22px;
+            height: 22px;
+            padding: 0 5px;
+            background: linear-gradient(180deg, #22c55e, #15803d);
+            border: 2px solid white;
+            border-radius: 12px;
+            color: white;
+            font-size: 12px;
+            font-weight: 900;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            pointer-events: none;
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        .btn-badge.ad-mode {
+            background: linear-gradient(180deg, #f59e0b, #d97706);
+        }
+
+        .count-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            min-width: 22px;
+            height: 22px;
+            padding: 0 5px;
+            background: #0ea5e9;
+            border: 2px solid white;
+            border-radius: 12px;
+            color: white;
+            font-size: 12px;
+            font-weight: 900;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            pointer-events: none;
+        }
+
+        /* --- Particles & Confetti --- */
+        .particle {
+            position: absolute; width: 10px; height: 10px; border-radius: 50%;
+            pointer-events: none; z-index: 1500;
+            animation: explode 0.6s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+            box-shadow: 0 0 8px currentColor;
+        }
+        @keyframes explode {
+            0% { transform: scale(1) translate(0, 0); opacity: 1; }
+            100% { transform: scale(0) translate(var(--tx), var(--ty)); opacity: 0; }
+        }
+
+        .confetti {
+            position: absolute;
+            width: 9px;
+            height: 16px;
+            pointer-events: none;
+            z-index: 2500;
+            animation: confetti-fall 2.4s ease-in forwards;
+        }
+        @keyframes confetti-fall {
+            0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* --- Modal Overlay Screens --- */
+        .overlay-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(2, 18, 12, 0.85);
+            backdrop-filter: blur(10px);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 2000;
+            animation: fade-in 0.22s ease;
+        }
+        @keyframes fade-in {
+            from { opacity: 0; transform: scale(0.96); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .hidden { display: none !important; }
+
+        .menu-box {
+            background: linear-gradient(160deg, #0f766e, #042f2e);
+            padding: 28px 24px;
+            border-radius: 24px;
+            border: 2.5px solid #34d399;
+            text-align: center;
+            width: 88%;
+            max-width: 350px;
+            box-shadow: 0 20px 45px rgba(0,0,0,0.85), inset 0 2px 2px rgba(255,255,255,0.2);
+            max-height: 88vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .app-logo-badge {
+            width: 82px;
+            height: 102px;
+            margin: 0 auto 14px auto;
+            background: #fcfaf2;
+            border-radius: 14px;
+            border: 2px solid #cbd5e1;
+            box-shadow: -6px 8px 0px #1e3a8a, 0 12px 25px rgba(0,0,0,0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 46px;
+            color: #dc2626;
+            font-weight: 900;
+            animation: float-logo 2.5s ease-in-out infinite;
+        }
+        @keyframes float-logo {
+            0%, 100% { transform: translateY(0) rotate(-3deg); }
+            50% { transform: translateY(-8px) rotate(3deg); }
+        }
+
+        .stars-row {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 8px 0 12px 0;
+            font-size: 42px;
+        }
+        .star-item {
+            color: #fde047;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
+            transform: scale(0);
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .star-item.show { transform: scale(1); }
+
+        .reward-bonus-pill {
+            background: rgba(16, 185, 129, 0.25);
+            border: 1.5px solid #34d399;
+            color: #a7f3d0;
+            border-radius: 14px;
+            padding: 8px 12px;
+            font-size: 14px;
+            font-weight: 800;
+            margin-bottom: 16px;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .btn-large {
+            background: linear-gradient(180deg, #fde047 0%, #f59e0b 55%, #d97706 100%);
+            border: 2px solid #fef08a;
+            width: 100%;
+            padding: 14px;
+            border-radius: 16px;
+            font-size: 20px;
+            font-weight: 900;
+            color: #451a03;
+            box-shadow: 0 5px 0 #92400e, 0 8px 15px rgba(0,0,0,0.4);
+            cursor: pointer;
+            margin-bottom: 10px;
+            font-family: inherit;
+            flex-shrink: 0;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .btn-large:active {
+            transform: translateY(4px);
+            box-shadow: 0 1px 0 #92400e;
+        }
+        .btn-large.cancel {
+            background: linear-gradient(180deg, #9ca3af, #4b5563);
+            border-color: #d1d5db;
+            box-shadow: 0 4px 0 #374151;
+            color: white;
+            margin-top: 8px;
+        }
+
+        .settings-toggles {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .btn-toggle-opt {
+            flex: 1;
+            background: linear-gradient(180deg, #3b82f6, #1d4ed8);
+            border: 1.5px solid #93c5fd;
+            box-shadow: 0 4px 0 #1e3a8a;
+            color: white;
+            font-size: 14px;
+            padding: 10px 6px;
+            margin-bottom: 0;
+            border-radius: 12px;
+        }
+        .btn-toggle-opt.muted {
+            background: linear-gradient(180deg, #ef4444, #b91c1c);
+            border-color: #fca5a5;
+            box-shadow: 0 4px 0 #7f1d1d;
+        }
+
+        .lang-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            overflow-y: auto;
+            padding-bottom: 5px;
+            margin-bottom: 5px;
+            scrollbar-width: thin;
+            scrollbar-color: #34d399 transparent;
+        }
+        .lang-btn {
+            background: linear-gradient(180deg, #10b981, #059669);
+            border: 1px solid #6ee7b7;
+            color: white;
+            box-shadow: 0 3px 0 #047857;
+            padding: 10px 5px;
+            font-size: 15px;
+            margin-bottom: 0;
+            border-radius: 12px;
+        }
+
+        .ad-loader {
+            width: 50px; height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.2);
+            border-top-color: #fbbf24;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px 0;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        #toast {
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-10px);
+            background: rgba(2, 24, 16, 0.94);
+            color: #86efac;
+            padding: 10px 22px;
+            border: 1.5px solid #34d399;
+            border-radius: 24px;
+            font-size: 15px;
+            font-weight: bold;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s, transform 0.25s;
+            z-index: 3000;
+            text-align: center;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.7);
+            white-space: nowrap;
+        }
+        #toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+
+    <div id="app-shell">
+        <!-- Start Screen -->
+        <div id="start-screen" class="overlay-screen">
+            <div class="menu-box" style="justify-content: center;">
+                <div class="app-logo-badge">🀄</div>
+                <h2 id="ui-title" style="color: #fbbf24; margin: 0 0 8px 0; font-size: 30px; text-shadow: 0 3px 6px rgba(0,0,0,0.6);">Mahjong Pro</h2>
+                <p id="ui-saved-lvl" style="color: #a7f3d0; margin: 0 0 22px 0; font-size: 15px; font-weight: bold;">Level 1</p>
+                <button class="btn-large" id="btn-start">Play Now</button>
+            </div>
+        </div>
+
+        <!-- Level Complete / Victory Screen -->
+        <div id="end-screen" class="overlay-screen hidden">
+            <div class="menu-box" style="justify-content: center;">
+                <h2 id="ui-end-title" style="color: #fbbf24; margin: 0; font-size: 28px;">Great Job!</h2>
+                <div class="stars-row">
+                    <span class="star-item" id="star-1">⭐</span>
+                    <span class="star-item" id="star-2">⭐</span>
+                    <span class="star-item" id="star-3">⭐</span>
+                </div>
+                <p style="font-size: 19px; margin: 4px 0 12px 0;"><span id="ui-score-text">Score: </span> <strong class="val-gold" id="end-score">0</strong></p>
+                <div class="reward-bonus-pill" id="ui-level-bonus">🎁 Level Bonus: +2 Shuffle & +2 Hint!</div>
+                <button class="btn-large" id="btn-next-level">Next Level</button>
+            </div>
+        </div>
+
+        <!-- Rewarded Ad Prompt Screen -->
+        <div id="reward-prompt-screen" class="overlay-screen hidden">
+            <div class="menu-box" style="justify-content: center;">
+                <h2 id="ui-rew-title" style="color: #fbbf24; margin-top: 0;">Extra Help 🎥</h2>
+                <p id="reward-text" style="font-size: 17px; margin-bottom: 20px; line-height: 1.4;">Watch a short ad to get +2 helps.</p>
+                <button class="btn-large" id="btn-watch-ad">Watch Ad ▶</button>
+                <button class="btn-large cancel" id="btn-cancel-ad">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Local Ad Simulator Fallback -->
+        <div id="ad-simulator" class="overlay-screen hidden">
+            <h2 id="ui-ad-show" style="color: white;">Showing Ad...</h2>
+            <div class="ad-loader"></div>
+            <p id="ui-ad-wait" style="color: #9ca3af;">Please wait...</p>
+        </div>
+
+        <!-- Settings Screen -->
+        <div id="settings-screen" class="overlay-screen hidden">
+            <div class="menu-box">
+                <h2 id="ui-set-title" style="color: #fbbf24; margin-top: 0; margin-bottom: 12px; flex-shrink: 0;">Settings</h2>
+                <div class="settings-toggles">
+                    <button class="btn-large btn-toggle-opt" id="btn-toggle-sound">🔊 Sound: ON</button>
+                    <button class="btn-large btn-toggle-opt" id="btn-toggle-vib">📳 Haptics: ON</button>
+                </div>
+                <p id="ui-set-desc" style="margin-bottom: 10px; margin-top: 0; font-size: 14px; color: #a7f3d0; flex-shrink: 0;">Choose Language:</p>
+                
+                <div class="lang-grid">
+                    <button class="btn-large lang-btn" data-lang="en">English</button>
+                    <button class="btn-large lang-btn" data-lang="fr">Français</button>
+                    <button class="btn-large lang-btn" data-lang="es">Español</button>
+                    <button class="btn-large lang-btn" data-lang="de">Deutsch</button>
+                    <button class="btn-large lang-btn" data-lang="it">Italiano</button>
+                    <button class="btn-large lang-btn" data-lang="pt">Português</button>
+                    <button class="btn-large lang-btn" data-lang="ru">Русский</button>
+                    <button class="btn-large lang-btn" data-lang="ja">日本語</button>
+                    <button class="btn-large lang-btn" data-lang="ko">한국어</button>
+                    <button class="btn-large lang-btn" data-lang="zh">中文</button>
+                    <button class="btn-large lang-btn" data-lang="ar">العربية</button>
+                </div>
+                <button class="btn-large cancel" id="btn-close-settings">Close</button>
+            </div>
+        </div>
+
+        <!-- Top HUD -->
+        <header id="top-hud">
+            <div class="hud-pill" dir="ltr">
+                <span class="stat-label" id="ui-hud-lvl">Level</span>
+                <span class="stat-value" id="hud-level">1</span>
+                <div class="progress-bar"><div class="progress-fill" id="hud-level-progress" style="width: 33%;"></div></div>
+            </div>
+
+            <div class="header-center">
+                <div class="score-pill">
+                    <span>🏆</span>
+                    <span class="score-value" id="hud-score">0</span>
+                </div>
+                <div class="best-score-sub">👑 <span id="hud-best">0</span></div>
+                <div class="combo-badge" id="hud-combo">🔥 COMBO x2</div>
+            </div>
+
+            <div class="hud-pill" dir="ltr">
+                <span class="stat-label" id="ui-hud-mat">Matches</span>
+                <span class="stat-value" id="hud-tiles">0</span>
+                <div class="progress-bar"><div class="progress-fill" id="hud-progress" style="width: 0%;"></div></div>
+            </div>
+        </header>
+
+        <!-- Game Board Wrapper -->
+        <div id="board-wrapper">
+            <div id="game-board"></div>
+            <div id="toast">Auto-reshuffling!</div>
+        </div>
+
+        <!-- Bottom App Controls Dock (2 Help Buttons with 2 Charges + Undo + Settings) -->
+        <div class="controls" id="bottom-controls">
+            <div class="action-btn-wrapper" id="shuffle-wrapper">
+                <button class="action-btn circular" id="btn-shuffle">
+                    <img id="icon-shuffle" alt="Shuffle" style="width: 26px; height: 26px; object-fit: contain; pointer-events: none;">
+                </button>
+                <div class="btn-badge" id="badge-shuffle">2</div>
+            </div>
+
+            <div class="action-btn-wrapper">
+                <button class="action-btn circular" id="btn-hint">
+                    <img id="icon-hint" alt="Hint" style="width: 26px; height: 26px; object-fit: contain; pointer-events: none;">
+                </button>
+                <div class="btn-badge" id="badge-hint">2</div>
+            </div>
+
+            <div class="action-btn-wrapper">
+                <button class="action-btn circular" id="btn-undo-move">
+                    <img id="icon-undo" alt="Undo" style="width: 26px; height: 26px; object-fit: contain; pointer-events: none;">
+                </button>
+                <div class="count-badge" id="badge-undo-count">0</div>
+            </div>
+
+            <div class="action-btn-wrapper">
+                <button class="action-btn circular" id="btn-undo">
+                    <img id="icon-settings" alt="Settings" style="width: 26px; height: 26px; object-fit: contain; pointer-events: none;">
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =========================================================================
+        // Poki QA Protection: Prevent unwanted page scrolling via keys or wheel
+        // =========================================================================
+        window.addEventListener('keydown', (e) => {
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'PageUp', 'PageDown'].includes(e.key)) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        window.addEventListener('wheel', (e) => {
+            if (e.ctrlKey || !e.target.closest('.lang-grid')) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // =========================================================================
+        // Mobile Haptics & LocalStorage Persistence (Default Locked to English)
+        // =========================================================================
+        let currentLang = 'en';
+        let currentLevelIndex = 0;
+        let isProcessing = false;
+        
+        // 2 Free Helps on the 2 bottom buttons (Level 1 -> 2, Level 3 -> 2, Level 5 -> 2...)
+        const HELPS_AMOUNT = 2;
+        let shuffleHelps = HELPS_AMOUNT;
+        let hintHelps = HELPS_AMOUNT;
+        let pendingRewardType = null;
+
+        let comboCount = 0;
+        let lastMatchTime = 0;
+        let comboTimeout = null;
+
+        const AppState = {
+            vibrateEnabled: true,
+            bestScore: 0,
+
+            load() {
+                try {
+                    localStorage.removeItem('mahjong_lang');
+                    localStorage.removeItem('mahjong_en_shuffle_helps');
+                    localStorage.removeItem('mahjong_en_hint_helps');
+
+                    const savedLvl = localStorage.getItem('mahjong_v3_lvl');
+                    const savedBest = localStorage.getItem('mahjong_v3_best');
+                    const savedLang = localStorage.getItem('mahjong_v3_lang');
+                    const savedSound = localStorage.getItem('mahjong_v3_sound');
+                    const savedVib = localStorage.getItem('mahjong_v3_vib');
+                    const savedShuffleHelps = localStorage.getItem('mahjong_v3_shuffle_helps');
+                    const savedHintHelps = localStorage.getItem('mahjong_v3_hint_helps');
+
+                    if (savedLvl !== null) currentLevelIndex = parseInt(savedLvl, 10) || 0;
+                    if (savedBest !== null) this.bestScore = parseInt(savedBest, 10) || 0;
+                    if (savedLang && i18n[savedLang]) currentLang = savedLang;
+                    if (savedSound !== null) SoundFX.enabled = savedSound === 'true';
+                    if (savedVib !== null) this.vibrateEnabled = savedVib === 'true';
+                    if (savedShuffleHelps !== null) shuffleHelps = parseInt(savedShuffleHelps, 10);
+                    if (savedHintHelps !== null) hintHelps = parseInt(savedHintHelps, 10);
+                } catch (e) {}
+            },
+
+            save() {
+                try {
+                    localStorage.setItem('mahjong_v3_lvl', currentLevelIndex);
+                    localStorage.setItem('mahjong_v3_best', this.bestScore);
+                    localStorage.setItem('mahjong_v3_lang', currentLang);
+                    localStorage.setItem('mahjong_v3_sound', SoundFX.enabled);
+                    localStorage.setItem('mahjong_v3_vib', this.vibrateEnabled);
+                    localStorage.setItem('mahjong_v3_shuffle_helps', shuffleHelps);
+                    localStorage.setItem('mahjong_v3_hint_helps', hintHelps);
+                } catch (e) {}
+            },
+
+            haptic(pattern) {
+                if (this.vibrateEnabled && navigator.vibrate) {
+                    try { navigator.vibrate(pattern); } catch (e) {}
+                }
+            }
+        };
+
+        // =========================================================================
+        // Embedded SVG Mahjong Tile Art Generator (25 Authentic Tiles + 4 Dock Icons)
+        // =========================================================================
+        function createMahjongResources() {
+            const toDataURI = (svgContent) =>
+                `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
+                    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 88 120">${svgContent}</svg>`
+                )}`;
+
+            const drawCircle = (cx, cy, r, color) => `
+                <circle cx="${cx}" cy="${cy}" r="${r}" fill="${color}" stroke="#0f172a" stroke-width="1.2"/>
+                <circle cx="${cx}" cy="${cy}" r="${r * 0.62}" fill="none" stroke="#ffffff" stroke-width="1.4" stroke-dasharray="2.5,2"/>
+                <circle cx="${cx}" cy="${cy}" r="${r * 0.28}" fill="#ffffff"/>
+            `;
+
+            const drawStick = (x, y, h, color) => `
+                <g>
+                    <rect x="${x - 4}" y="${y}" width="8" height="${h}" rx="4" fill="${color}" stroke="#0f172a" stroke-width="1"/>
+                    <line x1="${x - 4}" y1="${y + h / 2}" x2="${x + 4}" y2="${y + h / 2}" stroke="#ffffff" stroke-width="2"/>
+                    <line x1="${x - 1.5}" y1="${y + 3}" x2="${x - 1.5}" y2="${y + h - 3}" stroke="rgba(255,255,255,0.45)" stroke-width="1.2" stroke-linecap="round"/>
+                </g>
+            `;
+
+            const R = "#dc2626";
+            const G = "#15803d";
+            const B = "#1d4ed8";
+
+            const tiles = [
+                // 1-9 Dots (Pinzu)
+                toDataURI(`
+                    <circle cx="44" cy="60" r="31" fill="${R}" stroke="#0f172a" stroke-width="2"/>
+                    <circle cx="44" cy="60" r="23" fill="${G}" stroke="#ffffff" stroke-width="2" stroke-dasharray="4,2.5"/>
+                    <circle cx="44" cy="60" r="14" fill="${B}" stroke="#ffffff" stroke-width="1.5"/>
+                    <circle cx="44" cy="60" r="6" fill="#facc15"/>
+                `),
+                toDataURI(drawCircle(44, 34, 18, G) + drawCircle(44, 86, 18, B)),
+                toDataURI(drawCircle(24, 28, 14, B) + drawCircle(44, 60, 14, R) + drawCircle(64, 92, 14, G)),
+                toDataURI(drawCircle(26, 34, 15, B) + drawCircle(62, 34, 15, G) + drawCircle(26, 86, 15, G) + drawCircle(62, 86, 15, B)),
+                toDataURI(drawCircle(24, 30, 13, B) + drawCircle(64, 30, 13, G) + drawCircle(44, 60, 13, R) + drawCircle(24, 90, 13, G) + drawCircle(64, 90, 13, B)),
+                toDataURI(drawCircle(27, 28, 12.5, G) + drawCircle(61, 28, 12.5, G) + drawCircle(27, 64, 12.5, R) + drawCircle(61, 64, 12.5, R) + drawCircle(27, 94, 12.5, R) + drawCircle(61, 94, 12.5, R)),
+                toDataURI(drawCircle(20, 22, 10.5, G) + drawCircle(44, 32, 10.5, G) + drawCircle(68, 42, 10.5, G) + drawCircle(27, 70, 11.5, R) + drawCircle(61, 70, 11.5, R) + drawCircle(27, 96, 11.5, R) + drawCircle(61, 96, 11.5, R)),
+                toDataURI([24, 48, 72, 96].map(y => drawCircle(27, y, 10.5, B) + drawCircle(61, y, 10.5, B)).join('')),
+                toDataURI([22, 44, 66].map(x => drawCircle(x, 28, 10, G) + drawCircle(x, 60, 10, R) + drawCircle(x, 92, 10, B)).join('')),
+
+                // 10-18 Bamboo (Souzu)
+                toDataURI(`
+                    <circle cx="44" cy="62" r="32" fill="#ecfdf5" stroke="${G}" stroke-width="2"/>
+                    <path d="M44 25 C58 25, 68 42, 58 64 C66 76, 56 96, 44 96 C32 96, 22 76, 30 64 C20 42, 30 25, 44 25 Z" fill="${G}"/>
+                    <ellipse cx="44" cy="64" rx="14" ry="18" fill="${R}"/>
+                    <circle cx="44" cy="40" r="9" fill="${B}"/>
+                    <circle cx="41" cy="38" r="2.5" fill="#ffffff"/>
+                    <polygon points="48,37 58,40 48,43" fill="#facc15"/>
+                    <path d="M34 86 L44 74 L54 86 L44 98 Z" fill="#facc15"/>
+                `),
+                toDataURI(drawStick(44, 18, 38, B) + drawStick(44, 64, 38, G)),
+                toDataURI(drawStick(44, 18, 38, B) + drawStick(27, 64, 38, G) + drawStick(61, 64, 38, G)),
+                toDataURI(drawStick(27, 18, 38, B) + drawStick(61, 18, 38, G) + drawStick(27, 64, 38, G) + drawStick(61, 64, 38, B)),
+                toDataURI(drawStick(22, 18, 38, G) + drawStick(66, 18, 38, B) + drawStick(44, 41, 38, R) + drawStick(22, 64, 38, B) + drawStick(66, 64, 38, G)),
+                toDataURI([24, 44, 64].map(x => drawStick(x, 18, 38, G) + drawStick(x, 64, 38, B)).join('')),
+                toDataURI(drawStick(44, 12, 28, R) + [24, 44, 64].map(x => drawStick(x, 44, 30, G) + drawStick(x, 78, 30, B)).join('')),
+                toDataURI([20, 36, 52, 68].map(x => drawStick(x, 18, 38, G) + drawStick(x, 64, 38, B)).join('')),
+                toDataURI([22, 44, 66].map((x, i) => {
+                    const col = i === 1 ? R : (i === 0 ? G : B);
+                    return drawStick(x, 12, 29, col) + drawStick(x, 45, 29, col) + drawStick(x, 78, 29, col);
+                }).join('')),
+
+                // 19-25 Characters, Dragons, Flower
+                toDataURI(`
+                    <text x="44" y="48" font-size="36" font-weight="900" font-family="serif" text-anchor="middle" fill="#1e293b">一</text>
+                    <text x="44" y="96" font-size="42" font-weight="900" font-family="serif" text-anchor="middle" fill="${R}">萬</text>
+                `),
+                toDataURI(`
+                    <text x="44" y="48" font-size="36" font-weight="900" font-family="serif" text-anchor="middle" fill="#1e293b">五</text>
+                    <text x="44" y="96" font-size="42" font-weight="900" font-family="serif" text-anchor="middle" fill="${R}">萬</text>
+                `),
+                toDataURI(`
+                    <text x="44" y="48" font-size="36" font-weight="900" font-family="serif" text-anchor="middle" fill="#1e293b">九</text>
+                    <text x="44" y="96" font-size="42" font-weight="900" font-family="serif" text-anchor="middle" fill="${R}">萬</text>
+                `),
+                toDataURI(`
+                    <rect x="12" y="14" width="64" height="92" rx="6" fill="none" stroke="${R}" stroke-width="2.5"/>
+                    <text x="44" y="80" font-size="58" font-weight="900" font-family="serif" text-anchor="middle" fill="${R}">中</text>
+                `),
+                toDataURI(`
+                    <rect x="12" y="14" width="64" height="92" rx="6" fill="none" stroke="${G}" stroke-width="2.5"/>
+                    <text x="44" y="80" font-size="54" font-weight="900" font-family="serif" text-anchor="middle" fill="${G}">發</text>
+                `),
+                toDataURI(`
+                    <rect x="14" y="16" width="60" height="88" rx="6" fill="none" stroke="${B}" stroke-width="4.5"/>
+                    <rect x="21" y="23" width="46" height="74" rx="3" fill="none" stroke="${B}" stroke-width="2" stroke-dasharray="6,3"/>
+                    <circle cx="44" cy="60" r="8" fill="none" stroke="${B}" stroke-width="2.5"/>
+                `),
+                toDataURI(`
+                    <circle cx="44" cy="60" r="28" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+                    <g fill="${R}" stroke="#ffffff" stroke-width="1">
+                        <circle cx="44" cy="36" r="11"/><circle cx="44" cy="84" r="11"/>
+                        <circle cx="20" cy="60" r="11"/><circle cx="68" cy="60" r="11"/>
+                        <circle cx="27" cy="43" r="11"/><circle cx="61" cy="43" r="11"/>
+                        <circle cx="27" cy="77" r="11"/><circle cx="61" cy="77" r="11"/>
+                    </g>
+                    <circle cx="44" cy="60" r="12" fill="#facc15" stroke="#b45309" stroke-width="2"/>
+                    <text x="44" y="65" font-size="14" font-weight="bold" font-family="serif" text-anchor="middle" fill="#7c2d12">花</text>
+                `)
+            ];
+
+            const icons = {
+                shuffle: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>`)}`,
+                hint: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>`)}`,
+                undo: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>`)}`,
+                settings: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`)}`
+            };
+
+            return { tiles, icons };
+        }
+
+        const mahjongResources = createMahjongResources();
+        document.getElementById('icon-shuffle').src = mahjongResources.icons.shuffle;
+        document.getElementById('icon-hint').src = mahjongResources.icons.hint;
+        document.getElementById('icon-undo').src = mahjongResources.icons.undo;
+        document.getElementById('icon-settings').src = mahjongResources.icons.settings;
+
+        const myImages = mahjongResources.tiles;
+
+        // =========================================================================
+        // Web Audio API Synthesized Mahjong Sound Engine + Poki Ad Mute Compliance
+        // =========================================================================
+        const SoundFX = {
+            ctx: null,
+            enabled: true,
+            adMuted: false,
+
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+                if (this.ctx && this.ctx.state === 'suspended' && !this.adMuted && !document.hidden) {
+                    this.ctx.resume().catch(() => {});
+                }
+            },
+
+            canPlay() {
+                return this.enabled && !this.adMuted && !document.hidden;
+            },
+
+            setAdMute(mute) {
+                this.adMuted = mute;
+                if (!this.ctx) return;
+                if (mute) {
+                    this.ctx.suspend().catch(() => {});
+                } else if (this.enabled && !document.hidden) {
+                    this.ctx.resume().catch(() => {});
+                }
+            },
+
+            playTileClack(pitchShift = 1.0, delay = 0) {
+                if (!this.canPlay()) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime + delay;
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(1100 * pitchShift, now);
+                osc.frequency.exponentialRampToValueAtTime(260 * pitchShift, now + 0.045);
+
+                gain.gain.setValueAtTime(0.35, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.05);
+
+                const bufferSize = this.ctx.sampleRate * 0.015;
+                const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const output = noiseBuffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.3));
+                }
+
+                const whiteNoise = this.ctx.createBufferSource();
+                whiteNoise.buffer = noiseBuffer;
+
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.value = 2400 * pitchShift;
+                filter.Q.value = 1.5;
+
+                const noiseGain = this.ctx.createGain();
+                noiseGain.gain.setValueAtTime(0.4, now);
+                noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.015);
+
+                whiteNoise.connect(filter);
+                filter.connect(noiseGain);
+                noiseGain.connect(this.ctx.destination);
+                whiteNoise.start(now);
+            },
+
+            playMatch(combo = 1) {
+                if (!this.canPlay()) return;
+                this.init();
+                if (!this.ctx) return;
+
+                this.playTileClack(1.05, 0);
+                this.playTileClack(1.22, 0.055);
+
+                const now = this.ctx.currentTime + 0.06;
+                const baseFreq = 523.25 * Math.pow(1.059463, Math.min(combo - 1, 12));
+                const notes = [baseFreq, baseFreq * 1.25, baseFreq * 1.5];
+
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    const startTime = now + (idx * 0.055);
+                    osc.frequency.setValueAtTime(freq, startTime);
+
+                    gain.gain.setValueAtTime(0.18, startTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.38);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(startTime);
+                    osc.stop(startTime + 0.4);
+                });
+            },
+
+            playBlocked() {
+                if (!this.canPlay()) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(55, now + 0.09);
+
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            },
+
+            playMismatch() {
+                if (!this.canPlay()) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                [300, 230].forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    const start = now + idx * 0.09;
+                    osc.frequency.setValueAtTime(freq, start);
+                    gain.gain.setValueAtTime(0.2, start);
+                    gain.gain.exponentialRampToValueAtTime(0.001, start + 0.12);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(start);
+                    osc.stop(start + 0.13);
+                });
+            },
+
+            playFlip() {
+                if (!this.canPlay()) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(320, now);
+                osc.frequency.exponentialRampToValueAtTime(780, now + 0.08);
+
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.09);
+            },
+
+            playShuffle() {
+                if (!this.canPlay()) return;
+                this.init();
+                for (let i = 0; i < 7; i++) {
+                    this.playTileClack(0.85 + Math.random() * 0.4, i * 0.04);
+                }
+            },
+
+            playHint() {
+                if (!this.canPlay()) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                [880, 1108.7, 1318.5, 1760].forEach((freq, i) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    const start = now + i * 0.06;
+                    osc.frequency.setValueAtTime(freq, start);
+                    gain.gain.setValueAtTime(0.14, start);
+                    gain.gain.exponentialRampToValueAtTime(0.001, start + 0.25);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(start);
+                    osc.stop(start + 0.26);
+                });
+            },
+
+            playWin() {
+                if (!this.canPlay()) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const melody = [523.25, 659.25, 783.99, 1046.50, 783.99, 1046.50];
+                const times  = [0,      0.11,   0.22,   0.34,    0.50,   0.64];
+                const durs   = [0.15,   0.15,   0.15,   0.2,     0.15,   0.55];
+
+                melody.forEach((freq, i) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    const start = now + times[i];
+                    osc.frequency.setValueAtTime(freq, start);
+                    gain.gain.setValueAtTime(0.25, start);
+                    gain.gain.exponentialRampToValueAtTime(0.001, start + durs[i]);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(start);
+                    osc.stop(start + durs[i] + 0.02);
+                });
+            }
+        };
+
+        // Automatically suspend audio when browser tab is hidden (Required for Poki QA)
+        document.addEventListener('visibilitychange', () => {
+            if (!SoundFX.ctx) return;
+            if (document.hidden) {
+                SoundFX.ctx.suspend().catch(() => {});
+            } else if (SoundFX.enabled && !SoundFX.adMuted) {
+                SoundFX.ctx.resume().catch(() => {});
+            }
+        });
+
+        // =========================================================================
+        // Official Poki SDK Manager (PokiManager)
+        // =========================================================================
+        const PokiManager = {
+            sdkReady: false,
+            isGameplayActive: false,
+
+            init() {
+                if (typeof window.PokiSDK !== 'undefined') {
+                    window.PokiSDK.init().then(() => {
+                        this.sdkReady = true;
+                        window.PokiSDK.gameLoadingFinished();
+                    }).catch(() => {
+                        this.sdkReady = true;
+                        try { window.PokiSDK.gameLoadingFinished(); } catch (e) {}
+                    });
+                }
+            },
+
+            gameplayStart() {
+                if (this.isGameplayActive) return;
+                this.isGameplayActive = true;
+                if (typeof window.PokiSDK !== 'undefined') {
+                    try { window.PokiSDK.gameplayStart(); } catch (e) {}
+                }
+            },
+
+            gameplayStop() {
+                if (!this.isGameplayActive) return;
+                this.isGameplayActive = false;
+                if (typeof window.PokiSDK !== 'undefined') {
+                    try { window.PokiSDK.gameplayStop(); } catch (e) {}
+                }
+            },
+
+            commercialBreak(onComplete) {
+                this.gameplayStop();
+                isProcessing = true;
+                SoundFX.setAdMute(true);
+
+                if (typeof window.PokiSDK !== 'undefined') {
+                    window.PokiSDK.commercialBreak(() => {
+                        SoundFX.setAdMute(true);
+                    }).then(() => {
+                        SoundFX.setAdMute(false);
+                        isProcessing = false;
+                        if (onComplete) onComplete();
+                    }).catch(() => {
+                        SoundFX.setAdMute(false);
+                        isProcessing = false;
+                        if (onComplete) onComplete();
+                    });
+                } else {
+                    SoundFX.setAdMute(false);
+                    isProcessing = false;
+                    if (onComplete) onComplete();
+                }
+            },
+
+            rewardedBreak(onRewardGranted, onSkippedOrFailed) {
+                this.gameplayStop();
+                isProcessing = true;
+                SoundFX.setAdMute(true);
+
+                if (typeof window.PokiSDK !== 'undefined') {
+                    window.PokiSDK.rewardedBreak(() => {
+                        SoundFX.setAdMute(true);
+                    }).then((success) => {
+                        SoundFX.setAdMute(false);
+                        isProcessing = false;
+                        this.gameplayStart();
+                        if (success) {
+                            if (onRewardGranted) onRewardGranted();
+                        } else {
+                            if (onSkippedOrFailed) onSkippedOrFailed();
+                        }
+                    }).catch(() => {
+                        SoundFX.setAdMute(false);
+                        isProcessing = false;
+                        this.gameplayStart();
+                        if (onSkippedOrFailed) onSkippedOrFailed();
+                    });
+                } else {
+                    document.getElementById('ad-simulator').classList.remove('hidden');
+                    setTimeout(() => {
+                        document.getElementById('ad-simulator').classList.add('hidden');
+                        SoundFX.setAdMute(false);
+                        isProcessing = false;
+                        this.gameplayStart();
+                        if (onRewardGranted) onRewardGranted();
+                    }, 2200);
+                }
+            }
+        };
+
+        // =========================================================================
+        // Multi-Language Localization Dictionary (Default: English)
+        // =========================================================================
+        const i18n = {
+            en: { title: "Mahjong Pro", play: "Play Now", great: "Great Job!", scoreTxt: "Score: ", nextLevel: "Next Level", hudLvl: "Level", hudMat: "Matches", settings: "Settings", setDesc: "Choose Language:", close: "Close", noMoves: "No moves available! Try matching other tiles.", autoShuffle: "Auto-reshuffling!", helpTitle: "Extra Help 🎥", helpHint: "Watch a short ad to get +2 Hints 🔍", helpShuffle: "Watch a short ad to get +2 Shuffles 🔄", watchAd: "Watch Ad ▶", cancel: "Cancel", adShow: "Showing Ad...", adWait: "Please wait...", soundOn: "🔊 Sound: ON", soundOff: "🔇 Sound: OFF", vibOn: "📳 Haptics: ON", vibOff: "📴 Haptics: OFF", lvlBonus: "🎁 Level Bonus: +2 Shuffle & +2 Hint!" },
+            fr: { title: "Mahjong Pro", play: "Jouer", great: "Excellent !", scoreTxt: "Score: ", nextLevel: "Niveau Suivant", hudLvl: "Niveau", hudMat: "Paires", settings: "Paramètres", setDesc: "Choisir la langue :", close: "Fermer", noMoves: "Aucun mouvement disponible !", autoShuffle: "Mélange automatique !", helpTitle: "Aide Supplémentaire 🎥", helpHint: "Regardez une pub pour +2 indices 🔍", helpShuffle: "Regardez une pub pour +2 mélanges 🔄", watchAd: "Voir la pub ▶", cancel: "Annuler", adShow: "Affichage de la pub...", adWait: "Veuillez patienter...", soundOn: "🔊 Son : ON", soundOff: "🔇 Son : OFF", vibOn: "📳 Vib : ON", vibOff: "📴 Vib : OFF", lvlBonus: "🎁 Bonus : +2 Mélanges & +2 Indices !" },
+            es: { title: "Mahjong Pro", play: "Jugar", great: "¡Excelente!", scoreTxt: "Puntos: ", nextLevel: "Siguiente Nivel", hudLvl: "Nivel", hudMat: "Parejas", settings: "Ajustes", setDesc: "Elige el idioma:", close: "Cerrar", noMoves: "¡No hay movimientos!", autoShuffle: "¡Reorganización automática!", helpTitle: "Ayuda Extra 🎥", helpHint: "Mira un anuncio para +2 pistas 🔍", helpShuffle: "Mira un anuncio para +2 mezclas 🔄", watchAd: "Ver Anuncio ▶", cancel: "Cancelar", adShow: "Mostrando Anuncio...", adWait: "Por favor espera...", soundOn: "🔊 Sonido: ON", soundOff: "🔇 Sonido: OFF", vibOn: "📳 Vibrar: ON", vibOff: "📴 Vibrar: OFF", lvlBonus: "🎁 Bono: ¡+2 Mezclas y +2 Pistas!" },
+            de: { title: "Mahjong Pro", play: "Spielen", great: "Gut gemacht!", scoreTxt: "Punkte: ", nextLevel: "Nächstes Level", hudLvl: "Level", hudMat: "Paare", settings: "Einstellungen", setDesc: "Sprache wählen:", close: "Schließen", noMoves: "Keine Züge möglich!", autoShuffle: "Automatisches Mischen!", helpTitle: "Extra Hilfe 🎥", helpHint: "Werbung für +2 Tipps ansehen 🔍", helpShuffle: "Werbung für +2 Mischen ansehen 🔄", watchAd: "Werbung ansehen ▶", cancel: "Abbrechen", adShow: "Werbung wird geladen...", adWait: "Bitte warten...", soundOn: "🔊 Ton: AN", soundOff: "🔇 Ton: AUS", vibOn: "📳 Vib: AN", vibOff: "📴 Vib: AUS", lvlBonus: "🎁 Bonus: +2 Mischen & +2 Tipps!" },
+            it: { title: "Mahjong Pro", play: "Gioca Ora", great: "Ottimo Lavoro!", scoreTxt: "Punti: ", nextLevel: "Livello Successivo", hudLvl: "Livello", hudMat: "Coppie", settings: "Impostazioni", setDesc: "Scegli la lingua:", close: "Chiudi", noMoves: "Nessuna mossa!", autoShuffle: "Mescolamento automatico!", helpTitle: "Aiuto Extra 🎥", helpHint: "Guarda un annuncio per +2 suggerimenti 🔍", helpShuffle: "Guarda un annuncio per +2 mescolamenti 🔄", watchAd: "Guarda Annuncio ▶", cancel: "Annulla", adShow: "Caricamento...", adWait: "Attendere prego...", soundOn: "🔊 Audio: ON", soundOff: "🔇 Audio: OFF", vibOn: "📳 Vib: ON", vibOff: "📴 Vib: OFF", lvlBonus: "🎁 Bonus: +2 Mescola e +2 Suggerimenti!" },
+            pt: { title: "Mahjong Pro", play: "Jogar", great: "Bom Trabalho!", scoreTxt: "Pontos: ", nextLevel: "Próximo Nível", hudLvl: "Nível", hudMat: "Pares", settings: "Configurações", setDesc: "Escolha o idioma:", close: "Fechar", noMoves: "Sem movimentos!", autoShuffle: "Embaralhamento automático!", helpTitle: "Ajuda Extra 🎥", helpHint: "Veja um anúncio para +2 dicas 🔍", helpShuffle: "Veja um anúncio para +2 misturas 🔄", watchAd: "Ver Anúncio ▶", cancel: "Cancelar", adShow: "Mostrando Anúncio...", adWait: "Por favor aguarde...", soundOn: "🔊 Som: ON", soundOff: "🔇 Som: OFF", vibOn: "📳 Vibrar: ON", vibOff: "📴 Vibrar: OFF", lvlBonus: "🎁 Bônus: +2 Misturas e +2 Dicas!" },
+            ru: { title: "Маджонг Про", play: "Играть", great: "Отлично!", scoreTxt: "Очки: ", nextLevel: "Следующий уровень", hudLvl: "Уровень", hudMat: "Пары", settings: "Настройки", setDesc: "Выберите язык:", close: "Закрыть", noMoves: "Нет ходов!", autoShuffle: "Авто-перемешивание!", helpTitle: "Экстра Помощь 🎥", helpHint: "Смотреть рекламу для +2 подсказок 🔍", helpShuffle: "Смотреть рекламу для +2 перемешиваний 🔄", watchAd: "Смотреть ▶", cancel: "Отмена", adShow: "Показ рекламы...", adWait: "Пожалуйста, подождите...", soundOn: "🔊 Звук: ВКЛ", soundOff: "🔇 Звук: ВЫКЛ", vibOn: "📳 Вибро: ВКЛ", vibOff: "📴 Вибро: ВЫКЛ", lvlBonus: "🎁 Бонус: +2 Перемешивания и +2 Подсказки!" },
+            ja: { title: "麻雀プロ", play: "プレイ", great: "素晴らしい！", scoreTxt: "スコア: ", nextLevel: "次のレベル", hudLvl: "レベル", hudMat: "ペア", settings: "設定", setDesc: "言語を選択:", close: "閉じる", noMoves: "動かせる牌がありません！", autoShuffle: "自動シャッフル！", helpTitle: "追加ヘルプ 🎥", helpHint: "広告を見てヒント+2を得る 🔍", helpShuffle: "広告を見てシャッフル+2を得る 🔄", watchAd: "広告を見る ▶", cancel: "キャンセル", adShow: "広告を表示中...", adWait: "お待ちください...", soundOn: "🔊 音: ON", soundOff: "🔇 音: OFF", vibOn: "📳 振動: ON", vibOff: "📴 振動: OFF", lvlBonus: "🎁 ボーナス: シャッフル+2 & ヒント+2！" },
+            ko: { title: "마작 프로", play: "플레이", great: "잘했어요!", scoreTxt: "점수: ", nextLevel: "다음 레벨", hudLvl: "레벨", hudMat: "쌍", settings: "설정", setDesc: "언어 선택:", close: "닫기", noMoves: "더 이상 움직일 수 없습니다!", autoShuffle: "자동 섞기!", helpTitle: "추가 도움 🎥", helpHint: "광고 보고 힌트 +2 얻기 🔍", helpShuffle: "광고 보고 섞기 +2 얻기 🔄", watchAd: "광고 보기 ▶", cancel: "취소", adShow: "광고 표시 중...", adWait: "잠시만 기다려주세요...", soundOn: "🔊 소리: ON", soundOff: "🔇 소리: OFF", vibOn: "📳 진동: ON", vibOff: "📴 진동: OFF", lvlBonus: "🎁 레벨 보너스: 섞기 +2 & 힌트 +2!" },
+            zh: { title: "麻将高手", play: "开始游戏", great: "太棒了！", scoreTxt: "得分: ", nextLevel: "下一关", hudLvl: "关卡", hudMat: "配对", settings: "设置", setDesc: "选择语言：", close: "关闭", noMoves: "没有可走的棋了！", autoShuffle: "自动洗牌！", helpTitle: "额外帮助 🎥", helpHint: "看广告获取 +2 提示 🔍", helpShuffle: "看广告获取 +2 洗牌 🔄", watchAd: "观看广告 ▶", cancel: "取消", adShow: "广告展示中...", adWait: "请稍候...", soundOn: "🔊 音效: 开", soundOff: "🔇 音效: 关", vibOn: "📳 震动: 开", vibOff: "📴 震动: 关", lvlBonus: "🎁 过关奖励: 洗牌 +2 & 提示 +2！" },
+            ar: { title: "ماجونغ برو", play: "العب الآن", great: "عمل رائع!", scoreTxt: "النقاط: ", nextLevel: "المستوى التالي", hudLvl: "المستوى", hudMat: "تطابق", settings: "الإعدادات", setDesc: "اختر لغة اللعب:", close: "إغلاق", noMoves: "لا توجد حركات! جرب مطابقة قطع أخرى.", autoShuffle: "إعادة ترتيب تلقائي!", helpTitle: "مساعدة إضافية 🎥", helpHint: "شاهد إعلاناً قصيراً للحصول على +2 تلميحات 🔍", helpShuffle: "شاهد إعلاناً قصيراً للحصول على +2 خلط للقطع 🔄", watchAd: "مشاهدة الإعلان ▶", cancel: "إلغاء", adShow: "جاري عرض الإعلان...", adWait: "يرجى الانتظار...", soundOn: "🔊 الصوت: مفعل", soundOff: "🔇 الصوت: مكتوم", vibOn: "📳 الاهتزاز: مفعل", vibOff: "📴 الاهتزاز: متوقف", lvlBonus: "🎁 مكافأة المستوى: +2 خلط و +2 تلميح!" }
+        };
+
+        function updateHelpBadgesUI() {
+            const badgeShuffle = document.getElementById('badge-shuffle');
+            const badgeHint = document.getElementById('badge-hint');
+
+            if (shuffleHelps > 0) {
+                badgeShuffle.innerText = shuffleHelps;
+                badgeShuffle.classList.remove('ad-mode');
+            } else {
+                badgeShuffle.innerText = '🎥';
+                badgeShuffle.classList.add('ad-mode');
+            }
+
+            if (hintHelps > 0) {
+                badgeHint.innerText = hintHelps;
+                badgeHint.classList.remove('ad-mode');
+            } else {
+                badgeHint.innerText = '🎥';
+                badgeHint.classList.add('ad-mode');
+            }
+        }
+
+        function updateSettingsTogglesUI() {
+            const btnSound = document.getElementById('btn-toggle-sound');
+            const btnVib = document.getElementById('btn-toggle-vib');
+            const t = i18n[currentLang];
+            btnSound.innerText = SoundFX.enabled ? t.soundOn : t.soundOff;
+            btnSound.classList.toggle('muted', !SoundFX.enabled);
+            btnVib.innerText = AppState.vibrateEnabled ? t.vibOn : t.vibOff;
+            btnVib.classList.toggle('muted', !AppState.vibrateEnabled);
+        }
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            const t = i18n[lang];
+            document.getElementById('ui-title').innerText = t.title;
+            document.getElementById('btn-start').innerText = t.play;
+            document.getElementById('ui-end-title').innerText = t.great;
+            document.getElementById('ui-score-text').innerText = t.scoreTxt;
+            document.getElementById('btn-next-level').innerText = t.nextLevel;
+            document.getElementById('ui-hud-lvl').innerText = t.hudLvl;
+            document.getElementById('ui-hud-mat').innerText = t.hudMat;
+            document.getElementById('ui-set-title').innerText = t.settings;
+            document.getElementById('ui-set-desc').innerText = t.setDesc;
+            document.getElementById('btn-close-settings').innerText = t.close;
+            document.getElementById('ui-rew-title').innerText = t.helpTitle;
+            document.getElementById('btn-watch-ad').innerText = t.watchAd;
+            document.getElementById('btn-cancel-ad').innerText = t.cancel;
+            document.getElementById('ui-ad-show').innerText = t.adShow;
+            document.getElementById('ui-ad-wait').innerText = t.adWait || "Please wait...";
+            document.getElementById('ui-level-bonus').innerText = t.lvlBonus;
+            document.getElementById('ui-saved-lvl').innerText = `${t.hudLvl} ${currentLevelIndex + 1}`;
+            document.getElementById('app-html').setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+            updateSettingsTogglesUI();
+            AppState.save();
+        }
+
+        const board = document.getElementById('game-board');
+        let score = 0, totalPairs = 0;
+        let activeTiles = [], moveHistory = [], selectedTile = null;
+
+        const BASE_W = 44;
+        const BASE_H = 60;
+        const TILE_VISUAL_W = 47;
+        const TILE_VISUAL_H = 63;
+        const Z_DEPTH = 6;
+
+        function checkOverlap(t1, t2) {
+            return (t1.x < t2.x + BASE_W && t1.x + BASE_W > t2.x && t1.y < t2.y + BASE_H && t1.y + BASE_H > t2.y);
+        }
+
+        // Solvable Board Generator Algorithm
+        function generateSolvableDeck(positionsArr) {
+            let simTiles = positionsArr.map(p => ({ x: p.x, y: p.y, z: p.z, ref: p, removed: false }));
+            let pairs = [];
+            let safeGuard = 0;
+            
+            while (simTiles.some(t => !t.removed) && safeGuard < 1000) {
+                safeGuard++;
+                let freeTiles = simTiles.filter(t => {
+                    if(t.removed) return false;
+                    let top = false, left = false, right = false;
+                    for(let o of simTiles) {
+                        if(o === t || o.removed) continue;
+                        let over = checkOverlap(t, o);
+                        if(o.z > t.z && over) top = true;
+                        if(o.z === t.z && over) {
+                            if(o.x < t.x) left = true;
+                            if(o.x > t.x) right = true;
+                        }
+                    }
+                    return !top && (!left || !right);
+                });
+                
+                if (freeTiles.length >= 2) {
+                    freeTiles.sort(() => Math.random() - 0.5);
+                    let t1 = freeTiles[0], t2 = freeTiles[1];
+                    t1.removed = true; t2.removed = true;
+                    pairs.push([t1, t2]);
+                } else {
+                    let remain = simTiles.filter(t => !t.removed);
+                    remain.forEach(t => t.removed = true);
+                    for(let i=0; i<remain.length-1; i+=2) pairs.push([remain[i], remain[i+1]]);
+                    break;
+                }
+            }
+            
+            let imgPool = [];
+            for(let i=0; i<pairs.length; i++) imgPool.push(myImages[i % myImages.length]);
+            imgPool.sort(() => Math.random() - 0.5);
+            
+            let map = new Map();
+            pairs.forEach(pair => {
+                let img = imgPool.pop() || myImages[0];
+                map.set(pair[0].ref, img);
+                map.set(pair[1].ref, img);
+            });
+            simTiles.filter(t => !map.has(t.ref)).forEach(t => map.set(t.ref, myImages[0]));
+
+            return map;
+        }
+
+        const levels = [
+            [
+                {x: 176, y: 40, z: 0}, {x: 220, y: 40, z: 0}, {x: 264, y: 40, z: 0}, {x: 308, y: 40, z: 0},
+                {x: 132, y: 100, z: 0}, {x: 176, y: 100, z: 0}, {x: 220, y: 100, z: 0}, {x: 264, y: 100, z: 0}, {x: 308, y: 100, z: 0}, {x: 352, y: 100, z: 0},
+                {x: 88, y: 160, z: 0}, {x: 132, y: 160, z: 0}, {x: 176, y: 160, z: 0}, {x: 220, y: 160, z: 0}, {x: 264, y: 160, z: 0}, {x: 308, y: 160, z: 0}, {x: 352, y: 160, z: 0}, {x: 396, y: 160, z: 0},
+                {x: 44, y: 220, z: 0}, {x: 88, y: 220, z: 0}, {x: 132, y: 220, z: 0}, {x: 176, y: 220, z: 0}, {x: 220, y: 220, z: 0}, {x: 264, y: 220, z: 0}, {x: 308, y: 220, z: 0}, {x: 352, y: 220, z: 0}, {x: 396, y: 220, z: 0}, {x: 440, y: 220, z: 0},
+                {x: 88, y: 280, z: 0}, {x: 132, y: 280, z: 0}, {x: 176, y: 280, z: 0}, {x: 220, y: 280, z: 0}, {x: 264, y: 280, z: 0}, {x: 308, y: 280, z: 0}, {x: 352, y: 280, z: 0}, {x: 396, y: 280, z: 0},
+                {x: 132, y: 340, z: 0}, {x: 176, y: 340, z: 0}, {x: 220, y: 340, z: 0}, {x: 264, y: 340, z: 0}, {x: 308, y: 340, z: 0}, {x: 352, y: 340, z: 0},
+                {x: 176, y: 400, z: 0}, {x: 220, y: 400, z: 0}, {x: 264, y: 400, z: 0}, {x: 308, y: 400, z: 0},
+                {x: 176, y: 130, z: 1}, {x: 220, y: 130, z: 1}, {x: 264, y: 130, z: 1}, {x: 308, y: 130, z: 1},
+                {x: 132, y: 190, z: 1}, {x: 176, y: 190, z: 1}, {x: 220, y: 190, z: 1}, {x: 264, y: 190, z: 1}, {x: 308, y: 190, z: 1}, {x: 352, y: 190, z: 1},
+                {x: 132, y: 250, z: 1}, {x: 176, y: 250, z: 1}, {x: 220, y: 250, z: 1}, {x: 264, y: 250, z: 1}, {x: 308, y: 250, z: 1}, {x: 352, y: 250, z: 1},
+                {x: 176, y: 310, z: 1}, {x: 220, y: 310, z: 1}, {x: 264, y: 310, z: 1}, {x: 308, y: 310, z: 1},
+                {x: 198, y: 160, z: 2}, {x: 242, y: 160, z: 2}, {x: 286, y: 160, z: 2},
+                {x: 198, y: 220, z: 2}, {x: 242, y: 220, z: 2}, {x: 286, y: 220, z: 2},
+                {x: 198, y: 280, z: 2}, {x: 242, y: 280, z: 2}, {x: 286, y: 280, z: 2},
+                {x: 242, y: 220, z: 3}
+            ],
+            [
+                {x: 44, y: 60, z: 0}, {x: 88, y: 60, z: 0}, {x: 396, y: 60, z: 0}, {x: 440, y: 60, z: 0},
+                {x: 44, y: 120, z: 0}, {x: 88, y: 120, z: 0}, {x: 132, y: 120, z: 0}, {x: 176, y: 120, z: 0}, {x: 220, y: 120, z: 0}, {x: 264, y: 120, z: 0}, {x: 308, y: 120, z: 0}, {x: 352, y: 120, z: 0}, {x: 396, y: 120, z: 0}, {x: 440, y: 120, z: 0},
+                {x: 44, y: 180, z: 0}, {x: 88, y: 180, z: 0}, {x: 132, y: 180, z: 0}, {x: 176, y: 180, z: 0}, {x: 220, y: 180, z: 0}, {x: 264, y: 180, z: 0}, {x: 308, y: 180, z: 0}, {x: 352, y: 180, z: 0}, {x: 396, y: 180, z: 0}, {x: 440, y: 180, z: 0},
+                {x: 44, y: 240, z: 0}, {x: 88, y: 240, z: 0}, {x: 132, y: 240, z: 0}, {x: 176, y: 240, z: 0}, {x: 220, y: 240, z: 0}, {x: 264, y: 240, z: 0}, {x: 308, y: 240, z: 0}, {x: 352, y: 240, z: 0}, {x: 396, y: 240, z: 0}, {x: 440, y: 240, z: 0},
+                {x: 44, y: 300, z: 0}, {x: 88, y: 300, z: 0}, {x: 132, y: 300, z: 0}, {x: 176, y: 300, z: 0}, {x: 220, y: 300, z: 0}, {x: 264, y: 300, z: 0}, {x: 308, y: 300, z: 0}, {x: 352, y: 300, z: 0}, {x: 396, y: 300, z: 0}, {x: 440, y: 300, z: 0},
+                {x: 44, y: 360, z: 0}, {x: 88, y: 360, z: 0}, {x: 396, y: 360, z: 0}, {x: 440, y: 360, z: 0},
+                {x: 132, y: 150, z: 1}, {x: 176, y: 150, z: 1}, {x: 220, y: 150, z: 1}, {x: 264, y: 150, z: 1}, {x: 308, y: 150, z: 1}, {x: 352, y: 150, z: 1},
+                {x: 132, y: 210, z: 1}, {x: 176, y: 210, z: 1}, {x: 220, y: 210, z: 1}, {x: 264, y: 210, z: 1}, {x: 308, y: 210, z: 1}, {x: 352, y: 210, z: 1},
+                {x: 132, y: 270, z: 1}, {x: 176, y: 270, z: 1}, {x: 220, y: 270, z: 1}, {x: 264, y: 270, z: 1}, {x: 308, y: 270, z: 1}, {x: 352, y: 270, z: 1},
+                {x: 176, y: 180, z: 2}, {x: 220, y: 180, z: 2}, {x: 264, y: 180, z: 2}, {x: 308, y: 180, z: 2},
+                {x: 176, y: 240, z: 2}, {x: 220, y: 240, z: 2}, {x: 264, y: 240, z: 2}, {x: 308, y: 240, z: 2},
+                {x: 220, y: 210, z: 3}, {x: 264, y: 210, z: 3}
+            ],
+            [
+                {x: 176, y: 60, z: 0}, {x: 220, y: 60, z: 0}, {x: 264, y: 60, z: 0}, {x: 308, y: 60, z: 0},
+                {x: 132, y: 120, z: 0}, {x: 176, y: 120, z: 0}, {x: 220, y: 120, z: 0}, {x: 264, y: 120, z: 0}, {x: 308, y: 120, z: 0}, {x: 352, y: 120, z: 0},
+                {x: 88, y: 180, z: 0}, {x: 132, y: 180, z: 0}, {x: 176, y: 180, z: 0}, {x: 220, y: 180, z: 0}, {x: 264, y: 180, z: 0}, {x: 308, y: 180, z: 0}, {x: 352, y: 180, z: 0}, {x: 396, y: 180, z: 0},
+                {x: 0, y: 210, z: 0}, {x: 44, y: 210, z: 0}, {x: 88, y: 240, z: 0}, {x: 132, y: 240, z: 0}, {x: 176, y: 240, z: 0}, {x: 220, y: 240, z: 0}, {x: 264, y: 240, z: 0}, {x: 308, y: 240, z: 0}, {x: 352, y: 240, z: 0}, {x: 396, y: 240, z: 0}, {x: 440, y: 210, z: 0}, {x: 484, y: 210, z: 0},
+                {x: 88, y: 300, z: 0}, {x: 132, y: 300, z: 0}, {x: 176, y: 300, z: 0}, {x: 220, y: 300, z: 0}, {x: 264, y: 300, z: 0}, {x: 308, y: 300, z: 0}, {x: 352, y: 300, z: 0}, {x: 396, y: 300, z: 0},
+                {x: 132, y: 360, z: 0}, {x: 176, y: 360, z: 0}, {x: 220, y: 360, z: 0}, {x: 264, y: 360, z: 0}, {x: 308, y: 360, z: 0}, {x: 352, y: 360, z: 0},
+                {x: 176, y: 420, z: 0}, {x: 220, y: 420, z: 0}, {x: 264, y: 420, z: 0}, {x: 308, y: 420, z: 0},
+                {x: 176, y: 150, z: 1}, {x: 220, y: 150, z: 1}, {x: 264, y: 150, z: 1}, {x: 308, y: 150, z: 1},
+                {x: 176, y: 210, z: 1}, {x: 220, y: 210, z: 1}, {x: 264, y: 210, z: 1}, {x: 308, y: 210, z: 1},
+                {x: 176, y: 270, z: 1}, {x: 220, y: 270, z: 1}, {x: 264, y: 270, z: 1}, {x: 308, y: 270, z: 1},
+                {x: 176, y: 330, z: 1}, {x: 220, y: 330, z: 1}, {x: 264, y: 330, z: 1}, {x: 308, y: 330, z: 1},
+                {x: 198, y: 180, z: 2}, {x: 242, y: 180, z: 2}, {x: 286, y: 180, z: 2},
+                {x: 198, y: 240, z: 2}, {x: 242, y: 240, z: 2}, {x: 286, y: 240, z: 2},
+                {x: 198, y: 300, z: 2}, {x: 242, y: 300, z: 2}, {x: 286, y: 300, z: 2},
+                {x: 220, y: 210, z: 3}, {x: 264, y: 210, z: 3},
+                {x: 220, y: 270, z: 3}, {x: 264, y: 270, z: 3},
+                {x: 242, y: 240, z: 4}
+            ]
+        ];
+
+        function resizeBoard() {
+            const shell = document.getElementById('app-shell');
+            const headerEl = document.getElementById('top-hud');
+            const controlsEl = document.getElementById('bottom-controls');
+            const wrapper = document.getElementById('board-wrapper');
+
+            const isWideLevel = (currentLevelIndex % levels.length) === 2;
+            const boardLayoutW = isWideLevel ? 515 : 465;
+            const boardLayoutH = 475;
+            
+            const totalH = shell.clientHeight || window.innerHeight;
+            const headerH = headerEl ? headerEl.offsetHeight : 76;
+            const controlsH = controlsEl ? controlsEl.offsetHeight : 76;
+            
+            let cw = (wrapper.clientWidth || shell.clientWidth || window.innerWidth) - 10;
+            let ch = Math.max(160, totalH - headerH - controlsH - 12);
+            
+            const scaleX = cw / boardLayoutW;
+            const scaleY = ch / boardLayoutH;
+            
+            let scale = Math.min(scaleX, scaleY);
+            if (isNaN(scale) || scale < 0.2) scale = 0.75;
+            if (scale > 2.25) scale = 2.25;
+            
+            board.style.transform = `scale(${scale})`;
+        }
+        window.addEventListener('resize', resizeBoard);
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 2400);
+        }
+
+        function spawnConfetti() {
+            const shell = document.getElementById('app-shell');
+            const colors = ['#fde047', '#34d399', '#60a5fa', '#f87171', '#f472b6', '#a78bfa'];
+            for (let i = 0; i < 36; i++) {
+                const c = document.createElement('div');
+                c.className = 'confetti';
+                c.style.left = Math.random() * 100 + '%';
+                c.style.top = '-20px';
+                c.style.backgroundColor = colors[i % colors.length];
+                c.style.animationDelay = (Math.random() * 0.6) + 's';
+                c.style.animationDuration = (1.8 + Math.random() * 1.2) + 's';
+                shell.appendChild(c);
+                setTimeout(() => c.remove(), 3000);
+            }
+        }
+
+        function spawnFloatingScore(el1, el2, points, combo) {
+            const x = ((el1.offsetLeft + el2.offsetLeft) / 2) + (TILE_VISUAL_W / 2);
+            const y = ((el1.offsetTop + el2.offsetTop) / 2) + (TILE_VISUAL_H / 2);
+            const floatEl = document.createElement('div');
+            floatEl.className = 'floating-score';
+            floatEl.style.left = x + 'px';
+            floatEl.style.top = y + 'px';
+            floatEl.innerText = combo > 1 ? `+${points} 🔥x${combo}` : `+${points}`;
+            board.appendChild(floatEl);
+            setTimeout(() => floatEl.remove(), 850);
+        }
+
+        function flipTileFaceUp(tile, callback) {
+            SoundFX.playFlip();
+            tile.el.style.transition = 'transform 0.14s ease-in';
+            tile.el.style.transform = 'scale(1.1) rotateY(90deg)';
+            setTimeout(() => {
+                tile.el.classList.remove('facedown');
+                tile.el.style.transition = 'transform 0.14s ease-out';
+                tile.el.style.transform = 'scale(1) rotateY(0deg)';
+                setTimeout(() => {
+                    tile.el.style.transition = '';
+                    tile.el.style.transform = '';
+                    if(callback) callback();
+                }, 140);
+            }, 140);
+        }
+
+        function flipTileFaceDown(tile, callback) {
+            SoundFX.playFlip();
+            tile.el.style.transition = 'transform 0.14s ease-in';
+            tile.el.style.transform = 'scale(1.1) rotateY(90deg)';
+            setTimeout(() => {
+                tile.el.classList.add('facedown');
+                tile.el.style.transition = 'transform 0.14s ease-out';
+                tile.el.style.transform = 'scale(1) rotateY(0deg)';
+                setTimeout(() => {
+                    tile.el.style.transition = '';
+                    tile.el.style.transform = '';
+                    if(callback) callback();
+                }, 140);
+            }, 140);
+        }
+
+        function startGame(levelIndex) {
+            SoundFX.init();
+            SoundFX.playShuffle();
+            AppState.haptic(25);
+
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('end-screen').classList.add('hidden');
+            
+            isProcessing = false;
+            comboCount = 0;
+            document.getElementById('hud-combo').classList.remove('active');
+            
+            updateHelpBadgesUI();
+            
+            board.innerHTML = '';
+            activeTiles = []; moveHistory = []; selectedTile = null; score = 0;
+            document.getElementById('hud-level').innerText = levelIndex + 1;
+            const lvlProgress = (((levelIndex % levels.length) + 1) / levels.length) * 100;
+            document.getElementById('hud-level-progress').style.width = `${lvlProgress}%`;
+
+            const layout = levels[levelIndex % levels.length];
+            const total = layout.length % 2 === 0 ? layout.length : layout.length - 1;
+            totalPairs = total / 2;
+
+            const validLayout = layout.slice(0, total);
+            let newAssignments = generateSolvableDeck(validLayout);
+
+            let allTilesConf = [];
+            validLayout.forEach((pos) => {
+                let imgAssigned = newAssignments.get(pos) || myImages[0];
+                allTilesConf.push({ pos, img: imgAssigned, imageId: imgAssigned });
+            });
+
+            allTilesConf.forEach((conf, idx) => {
+                const isMystery = Math.random() < 0.05;
+                const el = document.createElement('div');
+                
+                el.className = `tile dealing ${isMystery ? 'facedown' : ''}`;
+                el.style.animationDelay = `${(conf.pos.z * 0.08) + (idx * 0.004)}s`;
+                el.style.backgroundImage = `url("${conf.img}")`;
+                el.style.width = TILE_VISUAL_W + 'px';
+                el.style.height = TILE_VISUAL_H + 'px';
+                el.style.left = (conf.pos.x - (conf.pos.z * Z_DEPTH)) + 'px';
+                el.style.top = (conf.pos.y - (conf.pos.z * Z_DEPTH)) + 'px';
+                el.style.zIndex = conf.pos.z * 100 + Math.floor(conf.pos.y);
+
+                setTimeout(() => el.classList.remove('dealing'), 750);
+
+                const tileObj = { 
+                    el, x: conf.pos.x, y: conf.pos.y, z: conf.pos.z, 
+                    imageId: conf.imageId, 
+                    active: true, 
+                    isMystery: isMystery, 
+                    isRevealed: false
+                };
+                el.addEventListener('click', () => handleTileClick(tileObj));
+                board.appendChild(el);
+                activeTiles.push(tileObj);
+            });
+
+            setTimeout(resizeBoard, 10);
+            updateUI();
+
+            PokiManager.gameplayStart();
+        }
+
+        // =========================================================================
+        // Undo Move Feature
+        // =========================================================================
+        document.getElementById('btn-undo-move').addEventListener('click', () => {
+            if (isProcessing || moveHistory.length === 0) {
+                SoundFX.playBlocked();
+                AppState.haptic(30);
+                return;
+            }
+            SoundFX.playTileClack(0.95);
+            AppState.haptic(15);
+
+            if (selectedTile) {
+                selectedTile.el.classList.remove('selected');
+                selectedTile = null;
+            }
+
+            const lastMove = moveHistory.pop();
+            [lastMove.t1, lastMove.t2].forEach(t => {
+                t.active = true;
+                t.el.style.visibility = 'visible';
+                t.el.style.opacity = '1';
+                if (t.isMystery) {
+                    t.isRevealed = false;
+                    t.el.classList.add('facedown');
+                }
+            });
+
+            score = Math.max(0, score - 100);
+            updateUI();
+        });
+
+        // =========================================================================
+        // Automatic Reshuffle When No Moves Remain
+        // =========================================================================
+        function autoReshuffle() {
+            const activeOnly = activeTiles.filter(t => t.active);
+            if (activeOnly.length === 0) return;
+
+            isProcessing = true;
+            SoundFX.playShuffle();
+            AppState.haptic([20, 40, 20]);
+
+            let images = activeOnly.map(t => t.imageId);
+            let foundMatch = false;
+            let attempts = 0;
+
+            while (!foundMatch && attempts < 200) {
+                images.sort(() => Math.random() - 0.5);
+                activeOnly.forEach((t, i) => { t.tempImageId = images[i]; });
+                
+                const freeNormal = activeOnly.filter(t => t.isFree);
+                for(let i = 0; i < freeNormal.length; i++) {
+                    for(let j = i + 1; j < freeNormal.length; j++) {
+                        if(freeNormal[i].tempImageId === freeNormal[j].tempImageId) {
+                            foundMatch = true;
+                            break;
+                        }
+                    }
+                    if(foundMatch) break;
+                }
+                attempts++;
+            }
+
+            if (!foundMatch) {
+                let activePositions = activeOnly.map(t => ({ x: t.x, y: t.y, z: t.z, tileRef: t }));
+                let solvableMap = generateSolvableDeck(activePositions);
+                activePositions.forEach(p => {
+                    p.tileRef.tempImageId = solvableMap.get(p) || myImages[0];
+                });
+            }
+
+            activeOnly.forEach((t) => {
+                t.imageId = t.tempImageId;
+                t.el.style.backgroundImage = `url("${t.imageId}")`;
+                t.el.style.transition = 'transform 0.3s ease';
+                t.el.style.transform = 'scale(0)';
+                setTimeout(() => { 
+                    t.el.style.transform = 'scale(1)'; 
+                    setTimeout(() => {
+                        t.el.style.transition = '';
+                        t.el.style.transform = '';
+                    }, 300); 
+                }, 300);
+            });
+
+            if(selectedTile) {
+                selectedTile.el.classList.remove('selected');
+                if(selectedTile.isMystery) {
+                    selectedTile.isRevealed = false;
+                    selectedTile.el.classList.add('facedown');
+                }
+                selectedTile = null;
+            }
+            
+            showToast(i18n[currentLang].autoShuffle);
+            setTimeout(() => {
+                calculateLogic();
+                isProcessing = false;
+            }, 650);
+        }
+
+        // =========================================================================
+        // 2-Helps System on the 2 Bottom Buttons & Poki Rewarded Ads
+        // =========================================================================
+        function promptReward(type) {
+            PokiManager.gameplayStop();
+            SoundFX.playTileClack(1.1);
+            AppState.haptic(15);
+            pendingRewardType = type;
+            const textEl = document.getElementById('reward-text');
+            if(type === 'hint') textEl.innerText = i18n[currentLang].helpHint;
+            if(type === 'shuffle') textEl.innerText = i18n[currentLang].helpShuffle;
+            document.getElementById('reward-prompt-screen').classList.remove('hidden');
+        }
+
+        document.getElementById('btn-cancel-ad').addEventListener('click', () => {
+            SoundFX.playTileClack(0.8);
+            document.getElementById('reward-prompt-screen').classList.add('hidden');
+            pendingRewardType = null;
+            PokiManager.gameplayStart();
+        });
+
+        document.getElementById('btn-watch-ad').addEventListener('click', () => {
+            SoundFX.playTileClack(1.2);
+            document.getElementById('reward-prompt-screen').classList.add('hidden');
+            const rewardToGive = pendingRewardType;
+            pendingRewardType = null;
+
+            PokiManager.rewardedBreak(
+                () => {
+                    if (rewardToGive === 'hint') {
+                        hintHelps += HELPS_AMOUNT;
+                        updateHelpBadgesUI();
+                        AppState.save();
+                        executeHint();
+                    } else if (rewardToGive === 'shuffle') {
+                        shuffleHelps += HELPS_AMOUNT;
+                        updateHelpBadgesUI();
+                        AppState.save();
+                        executeShuffle();
+                    }
+                },
+                () => {}
+            );
+        });
+
+        function executeShuffle() {
+            if (isProcessing) return;
+            SoundFX.playShuffle();
+            AppState.haptic([20, 30, 20]);
+            activeTiles.forEach(t => t.el.classList.remove('hinted'));
+            
+            const activeOnly = activeTiles.filter(t => t.active);
+            let activePositions = activeOnly.map(t => ({ x: t.x, y: t.y, z: t.z, tileRef: t }));
+            
+            let newAssignments = generateSolvableDeck(activePositions);
+
+            activePositions.forEach(p => {
+                let t = p.tileRef;
+                t.imageId = newAssignments.get(p); 
+                t.el.style.backgroundImage = `url("${t.imageId}")`; 
+                
+                if (t.isMystery && !t.isRevealed) {
+                    t.el.classList.add('facedown');
+                }
+            });
+
+            if(selectedTile) { 
+                selectedTile.el.classList.remove('selected'); 
+                if(selectedTile.isMystery) {
+                    selectedTile.isRevealed = false;
+                    selectedTile.el.classList.add('facedown');
+                }
+                selectedTile = null; 
+            }
+            updateUI();
+        }
+
+        function executeHint() {
+            if (isProcessing) return;
+            activeTiles.forEach(t => t.el.classList.remove('hinted'));
+            
+            const free = activeTiles.filter(t => t.active && t.isFree);
+            for(let i=0; i<free.length; i++) {
+                for(let j=i+1; j<free.length; j++) {
+                    if(free[i].imageId === free[j].imageId) {
+                        SoundFX.playHint();
+                        AppState.haptic(20);
+                        let t1 = free[i];
+                        let t2 = free[j];
+                        
+                        const applyHint = (t) => {
+                            if (t.isMystery && !t.isRevealed) {
+                                t.isRevealed = true;
+                                flipTileFaceUp(t, () => { t.el.classList.add('hinted'); });
+                            } else {
+                                t.el.classList.add('hinted');
+                            }
+                        };
+
+                        applyHint(t1);
+                        applyHint(t2);
+
+                        createExplosion(t1.el, true); 
+                        createExplosion(t2.el, true);
+                        updateUI(); 
+                        return true;
+                    }
+                }
+            }
+            SoundFX.playBlocked();
+            showToast(i18n[currentLang].noMoves);
+            return false;
+        }
+
+        document.getElementById('btn-hint').addEventListener('click', () => {
+            if (isProcessing) return;
+            if (hintHelps > 0) { 
+                if (executeHint()) {
+                    hintHelps--;
+                    updateHelpBadgesUI();
+                    AppState.save();
+                }
+            } else { 
+                promptReward('hint'); 
+            }
+        });
+        
+        document.getElementById('btn-shuffle').addEventListener('click', () => {
+            if (isProcessing) return;
+            if (shuffleHelps > 0) { 
+                shuffleHelps--;
+                updateHelpBadgesUI();
+                AppState.save();
+                executeShuffle(); 
+            } else { 
+                promptReward('shuffle'); 
+            }
+        });
+
+        document.getElementById('btn-undo').addEventListener('click', () => {
+            PokiManager.gameplayStop();
+            SoundFX.playTileClack(1.0);
+            AppState.haptic(10);
+            document.getElementById('settings-screen').classList.remove('hidden');
+        });
+
+        document.getElementById('btn-close-settings').addEventListener('click', () => {
+            SoundFX.playTileClack(0.85);
+            document.getElementById('settings-screen').classList.add('hidden');
+            PokiManager.gameplayStart();
+        });
+
+        document.getElementById('btn-toggle-sound').addEventListener('click', () => {
+            SoundFX.enabled = !SoundFX.enabled;
+            updateSettingsTogglesUI();
+            AppState.save();
+            if (SoundFX.enabled) SoundFX.playTileClack(1.15);
+        });
+
+        document.getElementById('btn-toggle-vib').addEventListener('click', () => {
+            AppState.vibrateEnabled = !AppState.vibrateEnabled;
+            updateSettingsTogglesUI();
+            AppState.save();
+            if (AppState.vibrateEnabled) AppState.haptic(30);
+        });
+
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                SoundFX.playTileClack(1.1);
+                setLanguage(e.target.getAttribute('data-lang'));
+                document.getElementById('settings-screen').classList.add('hidden');
+                PokiManager.gameplayStart();
+            });
+        });
+
+        function createExplosion(element, isHintEffect = false) {
+            const centerX = element.offsetLeft + (TILE_VISUAL_W / 2);
+            const centerY = element.offsetTop + (TILE_VISUAL_H / 2);
+            const colors = isHintEffect ? ['#60a5fa', '#3b82f6', '#93c5fd'] : ['#fbbf24', '#f59e0b', '#ffffff', '#34d399', '#fcd34d'];
+            
+            for (let i = 0; i < 16; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = centerX + 'px';
+                particle.style.top = centerY + 'px';
+                particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.color = particle.style.backgroundColor; 
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * 65 + 30; 
+                particle.style.setProperty('--tx', `${Math.cos(angle) * distance}px`);
+                particle.style.setProperty('--ty', `${Math.sin(angle) * distance}px`);
+                board.appendChild(particle);
+                setTimeout(() => particle.remove(), 600);
+            }
+        }
+
+        function checkDeadlock() {
+            const freeTiles = activeTiles.filter(t => t.active && t.isFree);
+            for (let i = 0; i < freeTiles.length; i++) {
+                for (let j = i + 1; j < freeTiles.length; j++) {
+                    if (freeTiles[i].imageId === freeTiles[j].imageId) return false; 
+                }
+            }
+            return true;
+        }
+
+        function calculateLogic() {
+            activeTiles.forEach(tile => {
+                if(!tile.active) return;
+                let topBlocked = false, leftBlocked = false, rightBlocked = false;
+                activeTiles.forEach(other => {
+                    if(other === tile || !other.active) return;
+                    if(other.z > tile.z && checkOverlap(tile, other)) topBlocked = true;
+                    if(other.z === tile.z && checkOverlap(tile, other)) {
+                        if(other.x < tile.x) leftBlocked = true;
+                        if(other.x > tile.x) rightBlocked = true;
+                    }
+                });
+                tile.isFree = !topBlocked && (!leftBlocked || !rightBlocked);
+                
+                if (tile.isFree) { 
+                    tile.el.classList.remove('blocked'); 
+                } else { 
+                    tile.el.classList.add('blocked'); 
+                    tile.el.classList.remove('hinted'); 
+                }
+            });
+        }
+
+        function handleTileClick(tile) {
+            if(!tile.active || isProcessing) return;
+
+            if (!tile.isFree) {
+                SoundFX.playBlocked();
+                AppState.haptic(35);
+                tile.el.classList.remove('shake');
+                void tile.el.offsetWidth;
+                tile.el.classList.add('shake');
+                setTimeout(() => tile.el.classList.remove('shake'), 300);
+                return;
+            }
+
+            tile.el.classList.remove('hinted');
+
+            if(!selectedTile) {
+                selectedTile = tile;
+                AppState.haptic(10);
+                if(tile.isMystery && !tile.isRevealed) {
+                    isProcessing = true;
+                    tile.isRevealed = true;
+                    flipTileFaceUp(tile, () => {
+                        tile.el.classList.add('selected');
+                        isProcessing = false;
+                    });
+                } else {
+                    SoundFX.playTileClack(1.0);
+                    tile.el.classList.add('selected');
+                }
+            } else {
+                if(selectedTile === tile) {
+                    SoundFX.playTileClack(0.82);
+                    AppState.haptic(8);
+                    tile.el.classList.remove('selected');
+                    if(tile.isMystery) {
+                        isProcessing = true;
+                        tile.isRevealed = false;
+                        flipTileFaceDown(tile, () => { isProcessing = false; });
+                    }
+                    selectedTile = null;
+                } else {
+                    isProcessing = true; 
+                    
+                    const finalizeMatch = () => {
+                        tile.el.classList.add('selected');
+                        
+                        if(selectedTile.imageId === tile.imageId) {
+                            const matched1 = selectedTile;
+                            const matched2 = tile;
+                            matched1.active = false;
+                            matched2.active = false;
+                            selectedTile = null;
+
+                            const now = Date.now();
+                            if (now - lastMatchTime < 4500) {
+                                comboCount++;
+                            } else {
+                                comboCount = 1;
+                            }
+                            lastMatchTime = now;
+
+                            const comboBadge = document.getElementById('hud-combo');
+                            if (comboCount > 1) {
+                                comboBadge.innerText = `🔥 COMBO x${comboCount}`;
+                                comboBadge.classList.add('active');
+                                clearTimeout(comboTimeout);
+                                comboTimeout = setTimeout(() => comboBadge.classList.remove('active'), 4200);
+                            } else {
+                                comboBadge.classList.remove('active');
+                            }
+
+                            const earnedPoints = 100 * comboCount;
+                            SoundFX.playMatch(comboCount);
+                            AppState.haptic([15, 30, 20]);
+
+                            setTimeout(() => {
+                                createExplosion(matched1.el);
+                                createExplosion(matched2.el);
+                                spawnFloatingScore(matched1.el, matched2.el, earnedPoints, comboCount);
+
+                                matched1.el.style.opacity = '0';
+                                matched2.el.style.opacity = '0';
+                                matched1.el.classList.remove('selected', 'hinted');
+                                matched2.el.classList.remove('selected', 'hinted');
+
+                                setTimeout(() => {
+                                    matched1.el.style.visibility = 'hidden';
+                                    matched2.el.style.visibility = 'hidden';
+                                }, 300);
+
+                                moveHistory.push({t1: matched1, t2: matched2});
+                                score += earnedPoints;
+                                if (score > AppState.bestScore) {
+                                    AppState.bestScore = score;
+                                    AppState.save();
+                                }
+
+                                const scoreEl = document.getElementById('hud-score');
+                                scoreEl.classList.add('score-bump');
+                                setTimeout(() => scoreEl.classList.remove('score-bump'), 180);
+
+                                isProcessing = false;
+                                updateUI();
+                            }, 260); 
+                        } else {
+                            SoundFX.playMismatch();
+                            AppState.haptic(40);
+                            comboCount = 0;
+                            document.getElementById('hud-combo').classList.remove('active');
+
+                            setTimeout(() => {
+                                selectedTile.el.classList.remove('selected');
+                                tile.el.classList.remove('selected');
+                                
+                                let flipCount = 0;
+                                let flipsNeeded = (selectedTile.isMystery ? 1 : 0) + (tile.isMystery ? 1 : 0);
+                                
+                                const onFlipDone = () => {
+                                    flipCount++;
+                                    if(flipCount === flipsNeeded) {
+                                        selectedTile = null;
+                                        isProcessing = false;
+                                    }
+                                };
+
+                                if(flipsNeeded === 0) {
+                                    selectedTile = null;
+                                    isProcessing = false;
+                                } else {
+                                    if(selectedTile.isMystery) { selectedTile.isRevealed = false; flipTileFaceDown(selectedTile, onFlipDone); }
+                                    if(tile.isMystery) { tile.isRevealed = false; flipTileFaceDown(tile, onFlipDone); }
+                                }
+                            }, 600); 
+                        }
+                    };
+
+                    if(tile.isMystery && !tile.isRevealed) {
+                        tile.isRevealed = true;
+                        flipTileFaceUp(tile, finalizeMatch);
+                    } else {
+                        finalizeMatch();
+                    }
+                }
+            }
+        }
+
+        function showVictoryScreen() {
+            PokiManager.gameplayStop();
+
+            SoundFX.playWin();
+            AppState.haptic([40, 60, 40, 60, 80]);
+            spawnConfetti();
+
+            ['star-1', 'star-2', 'star-3'].forEach(id => document.getElementById(id).classList.remove('show'));
+
+            // Show the +2 Bonus notification when completing every 2nd level (entering Level 3, Level 5, Level 7...)
+            const nextLevelIndex = currentLevelIndex + 1;
+            const bonusEl = document.getElementById('ui-level-bonus');
+            if (nextLevelIndex % 2 === 0) {
+                bonusEl.style.display = 'block';
+                bonusEl.innerText = i18n[currentLang].lvlBonus;
+            } else {
+                bonusEl.style.display = 'none';
+            }
+
+            setTimeout(() => {
+                document.getElementById('end-score').innerText = score;
+                document.getElementById('end-screen').classList.remove('hidden');
+
+                ['star-1', 'star-2', 'star-3'].forEach((id, idx) => {
+                    setTimeout(() => {
+                        document.getElementById(id).classList.add('show');
+                        SoundFX.playTileClack(1.1 + idx * 0.15);
+                    }, 220 * (idx + 1));
+                });
+            }, 450);
+        }
+
+        function updateUI() {
+            document.getElementById('hud-score').innerText = score;
+            document.getElementById('hud-best').innerText = AppState.bestScore;
+            document.getElementById('badge-undo-count').innerText = moveHistory.length;
+            updateHelpBadgesUI();
+
+            const remaining = activeTiles.filter(t => t.active).length;
+            const pairsMatched = totalPairs - (remaining / 2);
+            document.getElementById('hud-tiles').innerText = pairsMatched;
+            document.getElementById('hud-progress').style.width = `${totalPairs > 0 ? (pairsMatched / totalPairs) * 100 : 0}%`;
+            calculateLogic();
+            
+            if(remaining === 0 && activeTiles.length > 0) {
+                showVictoryScreen();
+            } else if (remaining > 0 && checkDeadlock()) {
+                autoReshuffle();
+            }
+        }
+
+        document.getElementById('btn-start').addEventListener('click', () => startGame(currentLevelIndex));
+        
+        // Advance to next level: grant +2 Helps every 2 levels (Level 1 -> 2, Level 3 -> 2, Level 5 -> 2...)
+        document.getElementById('btn-next-level').addEventListener('click', () => { 
+            currentLevelIndex++;
+            if (currentLevelIndex % 2 === 0) {
+                shuffleHelps += HELPS_AMOUNT;
+                hintHelps += HELPS_AMOUNT;
+            }
+            updateHelpBadgesUI();
+            AppState.save();
+
+            PokiManager.commercialBreak(() => {
+                startGame(currentLevelIndex);
+            });
+        });
+
+        // Initialize saved state, English UI, and Poki SDK
+        AppState.load();
+        setLanguage(currentLang);
+        updateHelpBadgesUI();
+        document.getElementById('hud-best').innerText = AppState.bestScore;
+        PokiManager.init();
+    </script>
+</body>
+</html>
