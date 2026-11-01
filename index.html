@@ -1170,11 +1170,17 @@
         });
 
         // =========================================================================
-        // Official Poki SDK Manager (PokiManager)
+        // Official Poki SDK Manager (With Automatic Local/GitHub/Netlify Ad Fallback)
         // =========================================================================
         const PokiManager = {
             sdkReady: false,
             isGameplayActive: false,
+
+            isLivePokiDomain() {
+                const host = (window.location.hostname || '').toLowerCase();
+                const ref = (document.referrer || '').toLowerCase();
+                return host.includes('poki') || ref.includes('poki');
+            },
 
             init() {
                 if (typeof window.PokiSDK !== 'undefined') {
@@ -1209,7 +1215,7 @@
                 isProcessing = true;
                 SoundFX.setAdMute(true);
 
-                if (typeof window.PokiSDK !== 'undefined') {
+                if (typeof window.PokiSDK !== 'undefined' && this.isLivePokiDomain()) {
                     window.PokiSDK.commercialBreak(() => {
                         SoundFX.setAdMute(true);
                     }).then(() => {
@@ -1228,12 +1234,23 @@
                 }
             },
 
+            runSimulatedAd(onRewardGranted) {
+                document.getElementById('ad-simulator').classList.remove('hidden');
+                setTimeout(() => {
+                    document.getElementById('ad-simulator').classList.add('hidden');
+                    SoundFX.setAdMute(false);
+                    isProcessing = false;
+                    this.gameplayStart();
+                    if (onRewardGranted) onRewardGranted();
+                }, 2200);
+            },
+
             rewardedBreak(onRewardGranted, onSkippedOrFailed) {
                 this.gameplayStop();
                 isProcessing = true;
                 SoundFX.setAdMute(true);
 
-                if (typeof window.PokiSDK !== 'undefined') {
+                if (typeof window.PokiSDK !== 'undefined' && this.isLivePokiDomain()) {
                     window.PokiSDK.rewardedBreak(() => {
                         SoundFX.setAdMute(true);
                     }).then((success) => {
@@ -1246,20 +1263,11 @@
                             if (onSkippedOrFailed) onSkippedOrFailed();
                         }
                     }).catch(() => {
-                        SoundFX.setAdMute(false);
-                        isProcessing = false;
-                        this.gameplayStart();
-                        if (onSkippedOrFailed) onSkippedOrFailed();
+                        this.runSimulatedAd(onRewardGranted);
                     });
                 } else {
-                    document.getElementById('ad-simulator').classList.remove('hidden');
-                    setTimeout(() => {
-                        document.getElementById('ad-simulator').classList.add('hidden');
-                        SoundFX.setAdMute(false);
-                        isProcessing = false;
-                        this.gameplayStart();
-                        if (onRewardGranted) onRewardGranted();
-                    }, 2200);
+                    // When testing on PC, localhost, GitHub Pages, or Netlify, run the built-in ad simulator and grant the +2 reward
+                    this.runSimulatedAd(onRewardGranted);
                 }
             }
         };
@@ -1749,15 +1757,13 @@
                 () => {
                     if (rewardToGive === 'hint') {
                         hintHelps += HELPS_AMOUNT;
-                        updateHelpBadgesUI();
-                        AppState.save();
-                        executeHint();
                     } else if (rewardToGive === 'shuffle') {
                         shuffleHelps += HELPS_AMOUNT;
-                        updateHelpBadgesUI();
-                        AppState.save();
-                        executeShuffle();
                     }
+                    SoundFX.playHint();
+                    AppState.haptic([20, 40, 20]);
+                    updateHelpBadgesUI();
+                    AppState.save();
                 },
                 () => {}
             );
