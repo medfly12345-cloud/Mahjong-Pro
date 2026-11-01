@@ -1266,7 +1266,6 @@
                         this.runSimulatedAd(onRewardGranted);
                     });
                 } else {
-                    // When testing on PC, localhost, GitHub Pages, or Netlify, run the built-in ad simulator and grant the +2 reward
                     this.runSimulatedAd(onRewardGranted);
                 }
             }
@@ -1592,7 +1591,8 @@
             });
 
             allTilesConf.forEach((conf, idx) => {
-                const isMystery = Math.random() < 0.05;
+                // 20% Inverse (Face-Down Mystery) Mahjong Tiles
+                const isMystery = Math.random() < 0.20;
                 const el = document.createElement('div');
                 
                 el.className = `tile dealing ${isMystery ? 'facedown' : ''}`;
